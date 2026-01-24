@@ -1,0 +1,11 @@
+# dbt artifacts
+target/
+dbt_packages/
+logs/
+
+# credentials
+profiles.yml
+
+# python
+__pycache__/
+.env
