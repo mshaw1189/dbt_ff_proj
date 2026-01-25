@@ -45,7 +45,27 @@ SELECT
     b.YardsCreatedPerGame,
     b.YardsCreatedPerCarry,
     b.BreakawayRuns,
-    b.BreakawayRunRate/100 AS BreakawayRunRate        
+    b.BreakawayRunRate/100 AS BreakawayRunRate,
+    c.PlayerHeight,           -------- Needs adjustment
+    CAST(split(c.PlayerHeight, "'")[safe_offset(0)] AS numeric) +
+        ROUND(
+            CAST(REPLACE(split(c.PlayerHeight, "'")[safe_offset(1)], '"', '') AS numeric)/12,
+            2) AS PlayerHeight_Decimal, 
+    (CAST(split(c.PlayerHeight, "'")[safe_offset(0)] AS numeric) * 12) +
+        CAST(REPLACE(split(c.PlayerHeight, "'")[safe_offset(1)], '"', '') AS numeric) 
+        AS PlayerHeight_Inches,    
+    c.PlayerWeight,
+    c.BMI,
+    c.HandSize,
+    c.FortyYardDash AS cbn_FortyYardDash,
+    c.TwentyYardShuttle AS cbn_TwentyYardShuttle,
+    c.ThreeConeDrill AS cbn_ThreeConeDrill,
+    c.VerticalJump AS cbn_VerticalJump,
+    c.BroadJump AS cbn_broadJump,
+    c.AgilityScore AS cbn_agilityScore,
+    c.AthleticismScore AS cbn_athleticismScore,
+    c.BurstScore AS cbn_burstScore,
+    c.SPARQx AS cbn_SPARQx
 FROM base_agg a
 LEFT JOIN effic_agg b 
     ON a.Year = b.Year
