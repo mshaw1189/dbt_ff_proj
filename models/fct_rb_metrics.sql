@@ -6,13 +6,18 @@ WITH base_agg AS (
 )
 
 , effic_agg AS (
-     SELECT * 
+    SELECT * 
     FROM {{ ref('rw_rb_efficiency_metrics') }}
 )
 
 , combine AS (
-     SELECT * 
+    SELECT * 
     FROM {{ ref('rw_rb_combine') }}
+)
+
+, snap_counts AS (
+    SELECT * 
+    FROM {{ ref('rw_snap_counts') }}
 )
 
 SELECT
@@ -71,4 +76,7 @@ LEFT JOIN effic_agg b
     ON a.Year = b.Year
        AND a.PlayerPlayerId = b.PlayerPlayerId
 LEFT JOIN combine c
-    ON a.PlayerPlayerId = c.PlayerPlayerId           
+    ON a.PlayerPlayerId = c.PlayerPlayerId      
+LEFT JOIN snap_counts d
+    ON a.Year = d.Year
+       AND a.PlayerPlayerId = d.PlayerPlayerId
