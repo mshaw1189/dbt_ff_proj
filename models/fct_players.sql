@@ -19,8 +19,9 @@ SELECT
     ((TouchSnapPercentage/100) * 17) / played AS touch_share_extrap, -- expolated to account for if played full season
     FantasyPointsHalfPointPpr AS total_fantasy_points,  -- half ppr
     (FantasyPointsHalfPointPpr/played) AS fantasy_points_per_game,
-    DENSE_RANK() OVER(PARTITION BY position, year ORDER BY total_fantasy_points DESC) AS position_rank_total
-    -- DENSE_RANK() OVER(PARTITION BY position, year ORDER BY (FantasyPointsHalfPointPpr/played) DESC) AS position_rank_per_game    
+    DENSE_RANK() OVER(PARTITION BY year, position  ORDER BY total_fantasy_points DESC) AS position_rank_total,
+    -- DENSE_RANK() OVER(PARTITION BY position, year ORDER BY (FantasyPointsHalfPointPpr/played) DESC) AS position_rank_per_game, 
+    LAG(total_fantasy_points) OVER(PARTITION BY name ORDER BY year) AS points_py
 FROM {{ ref('rw_snap_counts') }} 
 WHERE 
     Position != 'FB'
