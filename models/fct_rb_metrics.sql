@@ -1,6 +1,6 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
-WITH base_agg AS (
+WITH base_metrics_agg AS (
     SELECT * 
     FROM {{ ref('rw_rb_advanced_metrics') }}
 )
@@ -21,36 +21,49 @@ WITH base_agg AS (
 )
 
 SELECT
-    a.Year,
-    a.Rank,
-    a.PlayerPlayerId,
-    a.PlayerShortName,
-    a.PlayerAgeExact,
-    a.Carries,
-    a.RushingYards,
-    a.YardsPerCarry,
-    a.RushingTouchdowns,
-    a.Targets,
-    a.Receptions,
-    a.ReceivingYards,
-    a.ReceivingTDs,
-    a.SnapShare/100 AS SnapShare,
-    a.OpportunityShare/100 AS OpportunityShare,
-    a.ShotgunCarryRate/100 AS ShotgunCarryRate,
-    a.ShotgunYardsPerCarry,
-    a.UnderCenterCarryRate/100 AS UnderCenterCarryRate,
-    a.UnderCenterYardsPerCarry,
-    a.AverageDefendersInTheBox,
-    a.StackedFrontCarryRate/100 AS StackedFrontCarryRate,
-    a.BaseFrontCarryRate/100 AS BaseFrontCarryRate,
-    a.LightFrontCarryRate/100 AS LightFrontCarryRate,
-    b.JukeRate/100 AS JukeRate,
-    b.EvadedTackles,
-    b.YardsCreated,
-    b.YardsCreatedPerGame,
-    b.YardsCreatedPerCarry,
-    b.BreakawayRuns,
-    b.BreakawayRunRate/100 AS BreakawayRunRate,
+    a.playerid,
+    a.name,
+    a.year,
+    m.PlayerAgeExact,
+    a.years_played,
+    a.team,
+    a.position_rank_total,    
+    a.total_fantasy_points,  -- half ppr
+    a.fantasy_points_per_game,    
+    a.games_played,
+    a.SnapsPlayed,
+    a.SnapsPerGame,
+    a.snap_share,
+    a.rush_share,
+    a.rush_share_extrap,
+    a.target_share,
+    a.target_share_extrap, -- extrapolated to account for if played full season
+    a.touch_share,		
+    a.touch_share_extrap, -- expolated to account for if played full season    
+    m.Carries,
+    m.RushingYards,
+    m.YardsPerCarry,
+    m.RushingTouchdowns,
+    m.Targets,
+    m.Receptions,
+    m.ReceivingYards,
+    m.ReceivingTDs,
+    m.OpportunityShare/100 AS OpportunityShare,
+    m.ShotgunCarryRate/100 AS ShotgunCarryRate,
+    m.ShotgunYardsPerCarry,
+    m.UnderCenterCarryRate/100 AS UnderCenterCarryRate,
+    m.UnderCenterYardsPerCarry,
+    m.AverageDefendersInTheBox,
+    m.StackedFrontCarryRate/100 AS StackedFrontCarryRate,
+    m.BaseFrontCarryRate/100 AS BaseFrontCarryRate,
+    m.LightFrontCarryRate/100 AS LightFrontCarryRate,
+    e.JukeRate/100 AS JukeRate,
+    e.EvadedTackles,
+    e.YardsCreated,
+    e.YardsCreatedPerGame,
+    e.YardsCreatedPerCarry,
+    e.BreakawayRuns,
+    e.BreakawayRunRate/100 AS BreakawayRunRate,
     c.PlayerHeight,           -------- Needs adjustment
     CAST(split(c.PlayerHeight, "'")[safe_offset(0)] AS numeric) +
         ROUND(
@@ -71,12 +84,14 @@ SELECT
     c.AthleticismScore AS cbn_athleticismScore,
     c.BurstScore AS cbn_burstScore,
     c.SPARQx AS cbn_SPARQx
-FROM base_agg a
-LEFT JOIN effic_agg b 
-    ON a.Year = b.Year
-       AND a.PlayerPlayerId = b.PlayerPlayerId
+FROM {{ ref('fct_players') }} a
+LEFT JOIN base_metrics_agg m
+    ON a.PlayerID = m.PlayerPlayerId
+       AND a.Year = m.Year
+LEFT JOIN effic_agg e
+    ON a.PlayerID = e.PlayerPlayerId 
+        AND m.Year = e.Year
 LEFT JOIN combine c
-    ON a.PlayerPlayerId = c.PlayerPlayerId      
-LEFT JOIN snap_counts d
-    ON a.Year = d.Year
-       AND a.PlayerPlayerId = d.PlayerPlayerId
+    ON a.PlayerID = c.PlayerPlayerId      
+WHERE
+    a.Position = 'RB'
