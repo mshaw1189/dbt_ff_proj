@@ -7,6 +7,7 @@ WITH rnd1 AS (
         DATE(draft_created_time) AS draft_created_date,
         DATE(draft_completed_time) AS draft_completed_date,
         CASE WHEN clock = 30 THEN 'fast' ELSE 'slow' END AS draft_clock,
+        source AS pick_source,                                                              -- auto or manual        
         tournament_entry_id AS team_id,
         username,
         pick_order AS starting_draft_position,
@@ -15,11 +16,10 @@ WITH rnd1 AS (
         player_id,
         player_name,
         position_name AS position,
-        projection_adp,
+        projection_adp AS projected_adp,
         ROUND(overall_pick_number - projection_adp, 2) AS adp_vs_projected,                 -- positive means drafted later than projected        
         COUNT(player_name) OVER(PARTITION BY draft_id, position_name 
                                 ORDER BY overall_pick_number) AS drafted_position_rank,     -- e.g. WR3 drafted overall (in that draft)
-        source AS pick_source,                                                              -- auto or manual
         pick_points AS pick_points_rnd1,
         roster_points AS roster_points_rnd1,
         ROUND(pick_points/roster_points,2) AS pct_roster_round_points_rnd1,
@@ -45,12 +45,10 @@ WITH rnd1 AS (
         COUNT(CASE WHEN position = 'QB' THEN player_name END) OVER(
                 PARTITION BY tournament_entry_id)                           AS qb_drafted_total,
         COUNT(CASE WHEN position = 'TE' THEN player_name END) OVER(
-                PARTITION BY tournament_entry_id)                           AS te_drafted_total,                                                
-
+                PARTITION BY tournament_entry_id)                           AS te_drafted_total                                            
         --     -- points per position
     FROM ff-dbt.ff_dbt_data_rw.rw_bbm_iv_2023_r1_results
 )
-
 
 SELECT *
 FROM rnd1 r1
