@@ -21,7 +21,9 @@ SELECT
     (FantasyPointsHalfPointPpr/played) AS fantasy_points_per_game,
     DENSE_RANK() OVER(PARTITION BY year, position  ORDER BY total_fantasy_points DESC) AS position_rank_total,
     -- DENSE_RANK() OVER(PARTITION BY position, year ORDER BY (FantasyPointsHalfPointPpr/played) DESC) AS position_rank_per_game, 
-    LAG(total_fantasy_points) OVER(PARTITION BY name ORDER BY year) AS points_py
+    -- LAG(total_fantasy_points) OVER(PARTITION BY name ORDER BY year) AS total_fantasy_points_py
+    LEAD(total_fantasy_points) OVER(PARTITION BY name ORDER BY year) AS total_fantasy_points_fy    
+        --- FY = Following Year.  were stats in 202x predictive of points in 202x+1?
 FROM {{ ref('rw_snap_counts') }} 
 WHERE 
-    Position != 'FB'
+    Position IN ('QB', 'RB', 'WR', 'TE')
